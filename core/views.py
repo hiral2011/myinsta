@@ -2,10 +2,12 @@ from django.shortcuts import redirect, render
 from django.http import HttpResponse
 from django.contrib.auth.models import User, auth
 from django.contrib import messages
-from .models import Profile, Post, LikePost, FollowersCount
+from .models import *
 from django.contrib.auth.decorators import login_required
 from itertools import chain
 import random
+from django.shortcuts import get_object_or_404
+
 
 # Create your views here.
 
@@ -26,7 +28,7 @@ def index(request):
         user_following_list.append(users.user) 
         
     for usernames in user_following_list:
-        feed_lists = Post.objects.filter(user=usernames)
+        feed_lists = Post.objects.all()
         feed.append(feed_lists)
 
     feed_list = list(chain(*feed))
@@ -59,7 +61,7 @@ def index(request):
 
 
     # posts = Post.objects.all()
-    return render(request, 'index.html',{'user_profile' : user_profile, 'posts': feed_list, 'suggestions_username_profile_list': suggestions_username_profile_list[:4]})
+    return render(request, 'index.html',{'user_profile' : user_profile, 'posts': feed_list, 'suggestions_username_profile_list': suggestions_username_profile_list})
     
 
 @login_required(login_url='signin')
@@ -145,13 +147,13 @@ def like_post(request):
 
         post.no_of_likes = post.no_of_likes+1
         post.save()
-        return redirect('/')
+        return redirect('index')
 
     else:
         like_filter.delete()
         post.no_of_likes = post.no_of_likes-1
         post.save()
-        return redirect('/')
+        return redirect('index')
 
 @login_required(login_url='signin')
 def follow(request):
@@ -259,3 +261,29 @@ def Signin(request):
 def Logout(request):
     auth.logout(request)
     return redirect('signin')
+
+def post_detail(request, id):
+    post = get_object_or_404(Post, id=id)
+
+    # List of active comments for this post
+    comments = post.comments.filter(active=True)
+
+    new_comment = None
+
+    if request.method == 'POST':
+        
+        comment_form = Comment(data=request.POST)
+        if comment_form.is_valid():
+                    
+            new_comment = comment_form.save()
+          
+            new_comment.post = post
+            
+            new_comment.save()
+    else:
+        comment_form = Comment()                   
+    return redirect(request, 'templates/post_detail',
+                    {'post': post,
+                   'comments': comments,
+                   'new_comment': new_comment,
+                   'comment_form': comment_form})

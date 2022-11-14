@@ -13,4 +13,6 @@ urlpatterns = [
     path('signup', views.Signup, name="signup"),
     path('', views.Signin, name="signin"),
     path('logout', views.Logout, name="logout"),
+    path('post_detail/<int:id>', views.post_detail, name="post_detail"),
+    # path('add/<int:id>', views.post_detail, name="post_detail"),
 ]
